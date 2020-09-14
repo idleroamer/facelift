@@ -90,9 +90,9 @@ public:
         Q_ASSERT(qobject_cast<ServiceType*>(serverObject) != nullptr);
         registerService(objectPath, static_cast<ServiceType *>(serverObject));
     }
-
 protected:
     QPointer<ServiceType> m_service;
+
 };
 
 }

@@ -78,42 +78,6 @@ public:
         return memberName;
     }
 
-    template<typename Type>
-    void serializeValue(DBusIPCMessage &msg, const Type &v)
-    {
-        typedef typename IPCTypeRegisterHandler<Type>::SerializedType SerializedType;
-        IPCTypeHandler<SerializedType>::write(msg, IPCTypeRegisterHandler<Type>::convertToSerializedType(v, *this));
-    }
-
-    template<typename Type>
-    void deserializeValue(DBusIPCMessage &msg, Type &v)
-    {
-        typedef typename IPCTypeRegisterHandler<Type>::SerializedType SerializedType;
-        SerializedType serializedValue;
-        IPCTypeHandler<SerializedType>::read(msg.inputPayLoad(), serializedValue);
-        IPCTypeRegisterHandler<Type>::convertToDeserializedType(v, serializedValue, *this);
-    }
-
-    template<typename Type>
-    bool deserializeOptionalValue(DBusIPCMessage &msg, Type &value, bool isCompleteSnapshot)
-    {
-        bool b = true;
-        if (!isCompleteSnapshot) {
-            msg.inputPayLoad().readNextParameter(b);
-        }
-        if (b) {
-            this->deserializeValue(msg, value);
-        }
-        return b;
-    }
-
-    bool deserializeReadyValue(DBusIPCMessage &msg, bool isCompleteSnapshot)
-    {
-        bool previousIsReady = this->ready();
-        deserializeOptionalValue(msg, this->m_serviceReady, isCompleteSnapshot);
-        return (this->ready() != previousIsReady);
-    }
-
     void setServiceRegistered(bool isRegistered) override
     {
         bool oldReady = this->ready();
@@ -139,6 +103,16 @@ public:
     void connectToServer()
     {
         m_ipcBinder.connectToServer();
+    }
+
+    template<typename T>
+    T castFromVariant(const QVariant& value) {
+        return m_ipcBinder.castFromVariant<T>(value);
+    }
+
+    template<typename T>
+    T castFromDBusVariant(const QVariant& value) {
+        return m_ipcBinder.castFromDBusVariant<T>(value);
     }
 
 protected:

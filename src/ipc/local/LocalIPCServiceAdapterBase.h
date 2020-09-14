@@ -30,8 +30,10 @@
 
 #pragma once
 
+#include <QtDBus>
 #include "LocalIPCMessage.h"
 #include "IPCServiceAdapterBase.h"
+#include "FaceliftIPCCommon.h"
 
 #if defined(FaceliftIPCLocalLib_LIBRARY)
 #  define FaceliftIPCLocalLib_EXPORT Q_DECL_EXPORT
@@ -61,18 +63,11 @@ public:
 
     IPCHandlingResult handleMessage(LocalIPCMessage &message);
 
-    void flush();
+    template<typename Value>
+    inline void sendPropertiesChanged(const QString& property , const Value & value);
 
-    template<typename Type>
-    void serializeValue(LocalIPCMessage &msg, const Type &v);
-
-    template<typename Type>
-    void deserializeValue(LocalIPCMessage &msg, Type &v);
-
-    void initOutgoingSignalMessage();
-
-    template<typename MemberID, typename ... Args>
-    void sendSignal(MemberID signalID, const Args & ... args);
+    template<typename ... Args>
+    void sendSignal(const QString& signalName, const Args & ... args);
 
     template<typename ReturnType>
     void sendAsyncCallAnswer(LocalIPCMessage &replyMessage, const ReturnType returnValue);
@@ -81,7 +76,11 @@ public:
 
     virtual IPCHandlingResult handleMethodCallMessage(LocalIPCMessage &requestMessage, LocalIPCMessage &replyMessage) = 0;
 
-    virtual void serializePropertyValues(LocalIPCMessage &msg, bool isCompleteSnapshot);
+    virtual void marshalPropertyValues(const QList<QVariant>& arguments, LocalIPCMessage &msg) = 0;
+
+    virtual void marshalProperty(const QList<QVariant>& arguments, LocalIPCMessage &msg) = 0;
+
+    virtual void setProperty(const QList<QVariant>& arguments) = 0;
 
     void registerService() override;
 
@@ -92,12 +91,6 @@ public:
     void send(LocalIPCMessage &message);
 
     void sendReply(LocalIPCMessage &message);
-
-    template<typename Type>
-    void serializeOptionalValue(LocalIPCMessage &msg, const Type &currentValue, Type &previousValue, bool isCompleteSnapshot);
-
-    template<typename Type>
-    void serializeOptionalValue(LocalIPCMessage &msg, const Type &currentValue, bool isCompleteSnapshot);
 
     virtual void appendDBUSIntrospectionData(QTextStream &s) const = 0;
 
@@ -111,6 +104,61 @@ public:
         return memberName;
     }
 
+    template<typename T>
+    T castFromVariant(const QVariant& value) {
+        return qvariant_cast<T>(value);
+    }
+
+    template<typename T>
+    T castFromDBusVariant(const QVariant& value) {
+        return qvariant_cast<T>(qvariant_cast<QDBusVariant>(value).variant());
+    }
+
+    template<typename T, typename std::enable_if_t<!std::is_convertible<T, facelift::InterfaceBase*>::value, int> = 0>
+    QVariant castToVariant(const T& value) {
+        return QVariant::fromValue(value);
+    }
+
+    QVariant castToVariant(const QList<QString>& value) {
+        return QVariant::fromValue(QStringList(value)); // workaround to use QList<QString> since its signature matches the QStringList
+    }
+
+    template<typename T, typename std::enable_if_t<std::is_convertible<T, facelift::InterfaceBase*>::value, int> = 0>
+    QVariant castToVariant(const T& value) {
+        DBusObjectPath  dbusObjectPath;
+        if (value != nullptr) {
+            dbusObjectPath = DBusObjectPath (getOrCreateAdapter<typename std::remove_pointer<T>::type::IPCLocalAdapterType>(value)->objectPath());
+        }
+        return QVariant::fromValue(dbusObjectPath);
+    }
+
+    template<typename T>
+    QVariant castToVariant(const QList<T*>& value) {
+        QStringList /*QList<DBusObjectPath >*/ objectPathes;
+        for (T* service: value) {
+            objectPathes.append(DBusObjectPath (getOrCreateAdapter<typename T::IPCLocalAdapterType>(service)->objectPath()));
+        }
+        return QVariant::fromValue(objectPathes);
+    }
+
+    template<typename T>
+    QVariant castToVariant(const QMap<QString, T*>& value) {
+        QMap<QString, DBusObjectPath > objectPathesMap;
+        for (const QString& key: value.keys()) {
+            objectPathesMap[key] = DBusObjectPath(getOrCreateAdapter<typename T::IPCLocalAdapterType>(value[key])->objectPath());
+        }
+        return QVariant::fromValue(objectPathesMap);
+    }
+
+    template<typename T>
+    QDBusVariant castToDBusVariant(const T& value) {
+        return QDBusVariant(castToVariant(value));
+    }
+
+    QDBusVariant castToDBusVariant(const QList<QString>& value) {
+        return QDBusVariant(castToVariant(value));
+    }
+
 protected:
     std::unique_ptr<LocalIPCMessage> m_pendingOutgoingMessage;
 
@@ -122,6 +170,14 @@ protected:
     bool m_alreadyInitialized = false;
 };
 
+template<typename Value>
+inline void LocalIPCServiceAdapterBase::sendPropertiesChanged(const QString& property , const Value & value)
+{
+    LocalIPCMessage reply(FaceliftIPCCommon::PROPERTIES_INTERFACE_NAME, FaceliftIPCCommon::PROPERTIES_CHANGED_SIGNAL_NAME);
+    reply << interfaceName();
+    reply << QVariant::fromValue(QMap<QString, QDBusVariant>{{property, castToDBusVariant(value)}});
+    this->send(reply);
+}
 
 }
 
