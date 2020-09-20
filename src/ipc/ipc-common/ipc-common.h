@@ -52,5 +52,16 @@ enum class IPCHandlingResult {
     INVALID,     // Message is invalid and could not be handled
 };
 
+struct FaceliftIPCCommonLib_EXPORT IPCCommon
+{
+    static constexpr const char *MODEL_DATA_CHANGED_MESSAGE_NAME = "ModelUpdateEventDataChanged";
+    static constexpr const char *MODEL_INSERT_MESSAGE_NAME = "ModelUpdateEventInsert";
+    static constexpr const char *MODEL_REMOVE_MESSAGE_NAME = "ModelUpdateEventRemove";
+    static constexpr const char *MODEL_MOVE_MESSAGE_NAME = "ModelUpdateEventMove";
+    static constexpr const char *MODEL_RESET_MESSAGE_NAME = "ModelUpdateEventReset";
+};
+
+
+
 }
 

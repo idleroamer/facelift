@@ -1,6 +1,6 @@
 /**********************************************************************
 **
-** Copyright (C) 2020 Luxoft Sweden AB
+** Copyright (C) 2018 Luxoft Sweden AB
 **
 ** This file is part of the FaceLift project
 **
@@ -28,47 +28,10 @@
 **
 **********************************************************************/
 
-#pragma once
+module tests.combined.another 1.0
 
-#if defined(FaceliftIPCLocalLib_LIBRARY)
-#  define FaceliftIPCLocalLib_EXPORT Q_DECL_EXPORT
-#else
-#  define FaceliftIPCLocalLib_EXPORT Q_DECL_IMPORT
-#endif
-
-#include <memory>
-
-#include <QDebug>
-
-#include "FaceliftModel.h"
-#include "FaceliftUtils.h"
-#include "ModelProperty.h"
-#include "ipc-common.h"
-
-namespace facelift {
-
-namespace ipc { namespace local {
-class ObjectRegistry;
-class ObjectRegistryAsync;
-} }
-
-namespace local {
-
-using namespace facelift;
-
-class FaceliftIPCLocalLib_EXPORT LocalIPCRequestHandler
-{
-
-public:
-    virtual void unmarshalProperties(const QVariantMap& changedProperties) = 0;
-    virtual void unmarshalPropertiesChanged(const QVariantMap& changedProperties) = 0;
-    virtual void handleSignals(LocalIPCMessage& msg) = 0;
-    virtual const QList<QString>& getSignals() const = 0;
-    virtual void setServiceRegistered(bool isRegistered) = 0;
-
-};
-
-
-}
-
+enum AnotherEnum {
+    O1,
+    O2,
+    O3
 }
