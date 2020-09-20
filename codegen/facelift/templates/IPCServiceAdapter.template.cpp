@@ -36,6 +36,7 @@
 {% set className = interfaceName + proxyTypeNameSuffix %}
 
 #include "ipc-common.h"
+#include "DBusSignatureHelper.h"
 #include "{{className}}.h"
 
 {{module.namespaceCppOpen}}
@@ -98,70 +99,41 @@ facelift::IPCHandlingResult {{className}}::handleMethodCallMessage(InputIPCMessa
 
 void {{className}}::appendDBUSIntrospectionData(QTextStream &s) const
 {
-    Q_UNUSED(s);   // For empty interfaces
+    Q_UNUSED(s)   // For empty interfaces
     {% for property in interface.properties %}
     {% if not property.type.is_model %}
-    s << QStringLiteral("<property name=\"{{property.name}}\" type=\"%1\" access=\"%2\"/>").arg(typeToSignature<{{property.type.interfaceCppType}}>(),
-                               {{ property.readonly | cppBool }} ? QStringLiteral("read"): QStringLiteral("readwrite"));
+    facelift::appendPropertySignature(s, "{{property.name}}", typeToSignature<{{property.type.interfaceCppType}}>(), {{ property.readonly | cppBool }});
     {% endif %}
     {% endfor %}
-    s << QStringLiteral("<property name=\"ready\" type=\"b\" access=\"read\"/>");
+    facelift::appendReadyProperty(s);
 
     {% for operation in interface.operations %}
-    s << "<method name=\"{{operation.name}}\">";
-    {%- for parameter in operation.parameters -%}
-    s << "<arg name=\"{{parameter.name}}\" type=\"";
-    s << typeToSignature<{{parameter.type.interfaceCppType}}>();
-    s << "\" direction=\"in\"/>";
-    {%- endfor -%}
-
+    facelift::appendDBusMethodSignature(s, "{{operation.name}}", std::list<std::pair<const char*, const char*>>{
+    {%- set comma = joiner(", ") -%}
+    {% for parameter in operation.parameters %}
+    {{ comma() }}{"{{parameter.name}}", typeToSignature<{{parameter.type.interfaceCppType}}>()}
+    {% endfor %}
+    }
     {% if operation.hasReturnValue %}
-    s << "<arg name=\"returnValue\" type=\"";
-    s << typeToSignature<{{operation.interfaceCppType}}>();
-    s << "\" direction=\"out\"/>";
-    {% endif %};
-    s << "</method>";
+    , typeToSignature<{{operation.interfaceCppType}}>()
+    {% endif %}
+    );
     {% endfor %}
 
     // signals
     {% for signal in interface.signals %}
     {
-        s << "<signal name=\"{{signal.name}}\">";
-        {%- for parameter in signal.parameters -%}
-        s << "<arg name=\"{{parameter.name}}\" type=\"";
-        s << typeToSignature<{{parameter.type.interfaceCppType}}>();
-        s << "\" direction=\"out\"/>";
-        {%- endfor -%}
-        s << "</signal>";
+    facelift::appendDBusSignalSignature(s, "{{signal.name}}", std::list<std::pair<const char*, const char*>>{
+    {%- set comma = joiner(", ") -%}
+    {% for parameter in signal.parameters %}
+    {{ comma() }}{"{{parameter.name}}", typeToSignature<{{parameter.type.interfaceCppType}}>()}
+    {% endfor %}
+    });
     }
     {% endfor %}
 
     {% if interface.hasModelProperty %}
-    s << "<signal name=\"" << facelift::IPCCommon::MODEL_DATA_CHANGED_MESSAGE_NAME << "\">";
-    s << "<arg name=\"modelName\" type=\"s\" direction=\"out\"/>";
-    s << "<arg name=\"first\" type=\"i\" direction=\"out\"/>";
-    s << "<arg name=\"changedItems\" type=\"a(v)\" direction=\"out\"/>";
-    s << "</signal>";
-    s << "<signal name=\"" << facelift::IPCCommon::MODEL_INSERT_MESSAGE_NAME << "\">";
-    s << "<arg name=\"modelName\" type=\"s\" direction=\"out\"/>";
-    s << "<arg name=\"first\" type=\"i\" direction=\"out\"/>";
-    s << "<arg name=\"last\" type=\"i\" direction=\"out\"/>";
-    s << "</signal>";
-    s << "<signal name=\"" << facelift::IPCCommon::MODEL_REMOVE_MESSAGE_NAME << "\">";
-    s << "<arg name=\"modelName\" type=\"s\" direction=\"out\"/>";
-    s << "<arg name=\"first\" type=\"i\" direction=\"out\"/>";
-    s << "<arg name=\"last\" type=\"i\" direction=\"out\"/>";
-    s << "</signal>";
-    s << "<signal name=\"" << facelift::IPCCommon::MODEL_MOVE_MESSAGE_NAME << "\">";
-    s << "<arg name=\"modelName\" type=\"s\" direction=\"out\"/>";
-    s << "<arg name=\"sourceFirstIndex\" type=\"i\" direction=\"out\"/>";
-    s << "<arg name=\"sourceLastIndex\" type=\"i\" direction=\"out\"/>";
-    s << "<arg name=\"destinationIndex\" type=\"i\" direction=\"out\"/>";
-    s << "</signal>";
-    s << "<signal name=\"" << facelift::IPCCommon::MODEL_RESET_MESSAGE_NAME << "\">";
-    s << "<arg name=\"modelName\" type=\"s\" direction=\"out\"/>";
-    s << "<arg name=\"size\" type=\"i\" direction=\"out\"/>";
-    s << "</signal>";
+    facelift::appendDBusModelSignals(s);
     {% endif %}
 }
 

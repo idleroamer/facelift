@@ -31,6 +31,7 @@
 #pragma once
 
 #include <QtDBus>
+#include <mutex> // std::once_flag
 #include "FaceliftUtils.h"
 #include "StructureBase.h"
 #include "DBusIPCCommon.h"
