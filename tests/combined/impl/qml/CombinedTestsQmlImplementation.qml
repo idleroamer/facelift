@@ -145,5 +145,9 @@ CombinedInterfaceImplementationBase {
         intProperty = 101;
     }
 
+    emitEmptyEventWithRelativeLongName: function() {
+        emptyEventWithRelativeLongName();
+    }
+
     Component.onCompleted: console.log("QML implementation is used.");
 }

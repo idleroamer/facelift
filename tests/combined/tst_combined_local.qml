@@ -89,4 +89,5 @@ TestCase {
         verify(combi);
         verify(combi.readyFlags.readyProperty);
     }
+
 }

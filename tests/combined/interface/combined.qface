@@ -80,6 +80,9 @@ interface CombinedInterface {
     signal eventWithList(list<int> p, bool q);
     signal eventWithMap(map<int> p);
     signal eventWithStructWithList(StructWithList p)
+
+    void emitEmptyEventWithRelativeLongName();
+    signal emptyEventWithRelativeLongName();
 }
 
 @ipc-async: true

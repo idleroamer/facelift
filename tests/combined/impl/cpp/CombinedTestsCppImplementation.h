@@ -141,6 +141,10 @@ public:
         m_intProperty = 101;
     }
 
+    void emitEmptyEventWithRelativeLongName() override {
+        emit emptyEventWithRelativeLongName();
+    }
+
     void setintProperty(int newValue) override
     {
         m_intProperty = newValue > 0 ? newValue : 0;
