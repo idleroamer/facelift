@@ -54,4 +54,9 @@ QtObject {
         target: otherDest
         signalName: "otherEvent"
     }
+
+    readonly property var emptyEventWithRelativeLongNameSpy: SignalSpy {
+        target: dest
+        signalName: "emptyEventWithRelativeLongName"
+    }
 }

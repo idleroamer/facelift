@@ -67,4 +67,15 @@ TestCase {
     function test_signals() {
         Check.signals();
     }
+
+    function test_signalKPI() {
+        var startTime = new Date().getTime();
+        for (var i = 0; i < 10000; i++) {
+            api.emitEmptyEventWithRelativeLongName();
+        }
+        spy.emptyEventWithRelativeLongNameSpy.wait(2000);
+        compare(spy.emptyEventWithRelativeLongNameSpy.count, 10000);
+        var elapsed = new Date().getTime() - startTime + " ms";
+        console.log("Signal emit/recieve duration:" + elapsed);
+    }
 }

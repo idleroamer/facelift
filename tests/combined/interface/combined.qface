@@ -83,6 +83,9 @@ interface CombinedInterface {
     signal eventWithMap(map<int> p);
     signal eventWithStructWithList(StructWithList p);
 
+    void emitEmptyEventWithRelativeLongName();
+    signal emptyEventWithRelativeLongName();
+
     list<tests.combined.another.AnotherEnum> listOfAnotherEnums();
 
     readonly string emptyString; // check QVariant delivery
